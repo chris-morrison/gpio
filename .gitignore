@@ -30,3 +30,11 @@
 
 # Debug files
 *.dSYM/
+
+*.vscode/*
+*.symvers
+*.swp
+*.cmd*
+*.mod*
+*.order
+
