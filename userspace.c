@@ -9,8 +9,8 @@
 int main(void)
 {
     int ret;
-    int fd = open("/dev/gpio_driver_controller", O_RDWR);
-    char testString[] = "+1";
+    int fd = open("/sys/class/gpio_inputs/export", O_WRONLY);
+    char testString[] = "17";
 
     if (fd < 0)
     {
@@ -27,7 +27,7 @@ int main(void)
 
 
     {
-        int gpiofd = open("/sys/class/gpio_inputs/gpio1/diffTime", O_RDONLY);
+        int gpiofd = open("/sys/class/gpio_inputs/gpio17/diffTime", O_RDONLY);
         char buf[512] = {0};
         int i;
 

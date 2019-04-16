@@ -39,17 +39,60 @@ static const char DEVICE_NAME[] = "gpio_input_driver";
 static const char CLASS_NAME[] = "gpio_inputs";
 
 static dev_t devNum;
-static struct cdev drivercdev;
  
 static void addHandler(int gpio);
 static void removeHandler(int gpio);
-static int devOpen(struct inode *, struct file *); 
 static int gpioOpen(struct inode *, struct file *); 
-static ssize_t devWrite(struct file *filep, const char *buffer, size_t len, loff_t *offset);
 static irq_handler_t gpioIRQ_Handler(unsigned int irq, void * dev_id, struct pt_regs * regs);
+
+static ssize_t export_store(struct class * class, struct class_attribute * attr, const char * buf, size_t len)
+{
+   long gpio = 0;
+   
+   printk(KERN_INFO "gpio-irq: export string from userspace: %s\n", buf);
+
+   if (0 == kstrtol(buf, 10, &gpio))
+   {
+      if (gpio > 0)
+      {
+         printk(KERN_INFO "gpio-irq: Adding handler to gpio %ld\n", gpio);
+         addHandler(gpio);
+      }
+   }
+   else
+   {
+      return -EINVAL;
+   }
+   return len;
+}
+static CLASS_ATTR_WO(export);
+
+static ssize_t unexport_store(struct class * class, struct class_attribute * attr, const char * buf, size_t len)
+{
+   long gpio = 0;
+   
+   printk(KERN_INFO "gpio-irq: unexport string from userspace: %s\n", buf);
+
+   if (0 == kstrtol(buf, 10, &gpio))
+   {
+      if (gpio > 0)
+      {
+         printk(KERN_INFO "gpio-irq: Removing handler from gpio %ld\n", gpio);
+         removeHandler(gpio);
+      }
+   }
+   else
+   {
+      return -EINVAL;
+   }
+   return len;
+}
+static CLASS_ATTR_WO(unexport);
 
 static struct attribute *gpio_class_attrs[] = 
 {
+  &class_attr_export.attr,
+  &class_attr_unexport.attr,
   NULL
 };
 ATTRIBUTE_GROUPS(gpio_class);
@@ -61,14 +104,6 @@ static struct class gpioClass =
   .class_groups = gpio_class_groups
 };
 
-/* file ops supported by the top level driver */
-static struct file_operations driver_fops =
-{
-    .open = devOpen,
-    .write = devWrite
-};
-
-/* file ops supported by each gpio device */
 static struct file_operations gpio_fops =
 {
     .open = gpioOpen
@@ -77,46 +112,6 @@ static struct file_operations gpio_fops =
 static int gpioOpen(struct inode *inodep, struct file *filep)
 {
    return 0;
-}
-
-static int devOpen(struct inode *inodep, struct file *filep)
-{
-   return 0;
-}
-
-static ssize_t devWrite(struct file *filep, const char *buffer, size_t len, loff_t *offset)
-{
-   char buf[10] = {0};
-   long gpio = 0;
-
-   if ((len < 2) || len > (sizeof(buf)- 1))
-   {
-      return -EINVAL;
-   }
-   
-   copy_from_user(buf, buffer, len);
-
-   printk(KERN_INFO "gpio-irq: string from userspace: %s\n", buf);
-
-   if (0 == kstrtol(buf, 10, &gpio))
-   {
-      if (gpio > 0)
-      {
-         printk(KERN_INFO "gpio-irq: Adding handler to gpio %ld\n", gpio);
-         addHandler(gpio);
-      }
-      else
-      {
-         gpio *= -1;
-         printk(KERN_INFO "gpio-irq: Removing handler from gpio %ld\n", gpio);
-         removeHandler(gpio);
-      }
-   }
-   else
-   {
-      return -EINVAL;
-   }
-   return len;
 }
 
 static ssize_t intCount_show(struct device * dev, struct device_attribute *attr, char *buf)
@@ -283,11 +278,9 @@ static int __init gpioInit(void)
 {
    int i;
    int ret;
-   dev_t currDev;
-   struct device * dev;
    printk(KERN_INFO "gpio-irq: Initialising the gpio-irq LKM!\n");
    
-   ret = alloc_chrdev_region(&devNum, 0, NUM_GPIO + 1, DEVICE_NAME);
+   ret = alloc_chrdev_region(&devNum, 0, NUM_GPIO, DEVICE_NAME);
    if (ret < 0)
    {
       printk(KERN_ALERT "gpio-irq: Failed to allocate device region\n");
@@ -296,7 +289,7 @@ static int __init gpioInit(void)
    ret = class_register(&gpioClass);
    if (ret < 0)
    {              
-      unregister_chrdev_region(devNum, NUM_GPIO + 1);   
+      unregister_chrdev_region(devNum, NUM_GPIO);   
       printk(KERN_ALERT "gpio-irq: Failed to register device class\n");
       return ret;          
    }
@@ -306,25 +299,7 @@ static int __init gpioInit(void)
       gpioDevice[i].gpioNum = -1;
       gpioDevice[i].irqNum = -1;
    }
-   cdev_init(&drivercdev, &driver_fops);
-   currDev = MKDEV(MAJOR(devNum), MINOR(devNum) + NUM_GPIO);
-   dev = device_create_with_groups(&gpioClass, NULL, currDev,
-      NULL, gpioattrgroups, "gpio_driver_controller");
-   if (NULL == dev)
-   {
-      printk(KERN_ALERT "gpio-irq: Failed to create controller device\n");
-      class_unregister(&gpioClass);                            
-      unregister_chrdev_region(devNum, NUM_GPIO + 1);   
-      return -1;
-   }
-   ret = cdev_add(&drivercdev, currDev, 1);
-   if (ret < 0)
-   {
-     printk(KERN_ALERT "gpio-irq: Failed to add contorller device\n");
-     device_destroy(&gpioClass, currDev);
-     class_unregister(&gpioClass);                            
-     unregister_chrdev_region(devNum, NUM_GPIO + 1);   
-   }
+   
 
    printk(KERN_INFO "gpio-irq: Initialised\n");
    return 0;
@@ -338,10 +313,6 @@ static void __exit gpioExit(void)
    {
       removeHandler(i);
    }
-
-   /* also cleanup the gpio_driver_controller */
-   device_destroy(&gpioClass, MKDEV(MAJOR(devNum), MINOR(devNum) + NUM_GPIO));  
-
    class_unregister(&gpioClass);                            
    unregister_chrdev_region(devNum, NUM_GPIO + 1);    
 
