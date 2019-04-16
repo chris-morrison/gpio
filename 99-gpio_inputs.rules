@@ -1,0 +1,15 @@
+# allow the 'gpio' group to access the contents of /sys/class/gpio_inputs
+# don't forget to add the user to 'gpio' group:
+# sudo usermod -a -G gpio <user>
+
+# this is for individual /sys/class/gpio_inputs/gpioX entries
+SUBSYSTEM=="gpio*", PROGRAM="/bin/sh -c 'find -L /sys/class/gpio_inputs/ -maxdepth 2 -exec chown root:gpio {} \; -exec chmod 770 {} \; || true'"
+
+# sets /sys/class/gpio_inputs/{un}export permissions
+KERNEL=="gpio_inputs", PROGRAM="/bin/sh -c 'find -L /sys/class/gpio_inputs/ -maxdepth 2 -exec chown root:gpio {} \; -exec chmod 770 {} \; || true'"
+
+
+ 
+
+
+
