@@ -1,0 +1,130 @@
+/*
+ * Modify original am57xx-beagle-x15-revc.dts to enable UARTs 1, 4, 5, 8, 9 and 10, 
+ * and make them accessible via the bbx15 expansion headers
+ */
+
+/*
+ * Copyright (C) 2014-2017 Texas Instruments Incorporated - http://www.ti.com/
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ */
+
+#include "am57xx-beagle-x15-common.dtsi"
+#include "am57xx-cmem.dtsi"
+
+/ {
+	model = "TI AM5728 BeagleBoard-X15 rev C";
+};
+
+&tpd12s015 {
+	gpios = <&gpio7 10 GPIO_ACTIVE_HIGH>,	/* gpio7_10, CT CP HPD */
+		<&gpio2 30 GPIO_ACTIVE_HIGH>,	/* gpio2_30, LS OE */
+		<&gpio7 12 GPIO_ACTIVE_HIGH>;	/* gpio7_12/sp1_cs2, HPD */
+};
+
+&mmc1 {
+	pinctrl-names = "default", "hs", "sdr12", "sdr25", "sdr50", "ddr50", "sdr104";
+	pinctrl-0 = <&mmc1_pins_default>;
+	pinctrl-1 = <&mmc1_pins_hs>;
+	pinctrl-2 = <&mmc1_pins_sdr12>;
+	pinctrl-3 = <&mmc1_pins_sdr25>;
+	pinctrl-4 = <&mmc1_pins_sdr50>;
+	pinctrl-5 = <&mmc1_pins_ddr50 &mmc1_iodelay_ddr_rev20_conf>;
+	pinctrl-6 = <&mmc1_pins_sdr104 &mmc1_iodelay_sdr104_rev20_conf>;
+	vmmc-supply = <&vdd_3v3>;
+	vqmmc-supply = <&ldo1_reg>;
+};
+
+&mmc2 {
+	pinctrl-names = "default", "hs", "ddr_1_8v";
+	pinctrl-0 = <&mmc2_pins_default>;
+	pinctrl-1 = <&mmc2_pins_hs>;
+	pinctrl-2 = <&mmc2_pins_ddr_rev20>;
+};
+
+/* set pinmux for extra UARTs */
+&dra7_pmx_core {
+
+	uart1_pins_default: uart1_pins_default {
+		pinctrl-single,pins = <
+      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 248, PIN_INPUT_SLEW | MUX_MODE0 ) // B27 uart0 rxd   P18.60
+      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 249, PIN_INPUT_SLEW | MUX_MODE0 ) // C26 uart0 txd   P18.30
+		>;
+	};
+
+  // uart 2 not available (no pins available)
+  
+  // uart3 already enabled by default
+  //uart3_pins_default: uart3_pins_default {
+  //	pinctrl-single,pins = <
+  //    DRA7XX_CORE_IOPAD( 0x3400 + 4 * 254, PIN_INPUT_SLEW | MUX_MODE2 ) // D27 uart2 rxd   P10.4
+  //    DRA7XX_CORE_IOPAD( 0x3400 + 4 * 255, PIN_INPUT_SLEW | MUX_MODE1 ) // C27 uart2 txd   P10.5
+  //	>;
+  //};
+  
+	uart4_pins_default: uart4_pins_default {
+		pinctrl-single,pins = <
+      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 207, PIN_INPUT_SLEW | MUX_MODE4 ) // G16 uart3 rxd (uart8 ctsn on bbx15 conector)   P17.14
+      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 208, PIN_INPUT_SLEW | MUX_MODE4 ) // D17 uart3 txd (uart8 rtsn on bbx15 conector)   P17.11
+		>;
+	};
+
+  uart5_pins_default: uart5_pins_default {
+		pinctrl-single,pins = <
+      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 225, PIN_INPUT_SLEW | MUX_MODE2 ) // AC07 uart4 rxd (mmc3_dat0 on bbx15 connector)   P17.7
+      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 226, PIN_INPUT_SLEW | MUX_MODE2 ) // AC06 uart4 txd (mmc3_dat1 on bbx15 connector)   P17.36
+		>;
+	};   
+    
+  // uart 6 not available (no pins available)
+  
+  // uart 7 not available (no pins available)
+  
+  uart8_pins_default: uart8_pins_default {
+		pinctrl-single,pins = <
+      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 244, PIN_INPUT_SLEW | MUX_MODE2 ) // G20 uart7 rxd    P17.43
+      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 245, PIN_INPUT_SLEW | MUX_MODE2 ) // G19 uart7 txd    P17.27
+		>;
+	};   
+
+  uart9_pins_default: uart9_pins_default {
+		pinctrl-single,pins = <
+      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 250, PIN_INPUT_SLEW | MUX_MODE2 ) // E25 uart8 rxd    P17.10
+      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 251, PIN_INPUT_SLEW | MUX_MODE2 ) // C27 uart8 txd    P17.9
+		>;
+	}; 
+    
+  uart10_pins_default: uart10_pins_default {
+		pinctrl-single,pins = <
+      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 229, PIN_INPUT_SLEW | MUX_MODE2 ) // AC08 uart9 rxd   P18.12
+      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 230, PIN_INPUT_SLEW | MUX_MODE2 ) // AD06 uart9 txd   P18.42
+		>;
+	}; 
+};
+
+/* enable extra uarts */
+&uart1 {
+	status = "okay";
+};
+
+&uart4 {
+	status = "okay";
+};
+
+&uart5 {
+	status = "okay";
+};
+
+&uart8 {
+	status = "okay";
+};
+
+&uart9 {
+	status = "okay";
+};
+
+&uart10 {
+	status = "okay";
+};
