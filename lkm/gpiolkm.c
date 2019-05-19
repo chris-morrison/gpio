@@ -209,12 +209,19 @@ static void addHandler(int gpioNum)
 
         if (gpiodev-> irqNum > 0)
         {
-           printk(KERN_INFO "gpio-irq: IRQ %d assigned to GPIO %d\n", gpiodev->irqNum, gpiodev->gpioNum);
-           request_irq(gpiodev->irqNum, 
+           ret = request_irq(gpiodev->irqNum, 
              (irq_handler_t) gpioIRQ_Handler,
               irqFlags,
              "gpio_irq_handler",
               gpiodev);
+           if (0 == ret)
+           {
+               printk(KERN_INFO "gpio-irq: IRQ %d assigned to GPIO %d\n", gpiodev->irqNum, gpiodev->gpioNum);
+           }   
+           else
+           {
+              printk(KERN_ALERT "gpio-irq: could not get IRQ %d for GPIO %d\n", gpiodev->irqNum, gpiodev->gpioNum);
+           }
         }
         else
         {
