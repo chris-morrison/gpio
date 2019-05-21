@@ -190,15 +190,15 @@
   
   uart7_pins_default: uart7_pins_default {
     pinctrl-single,pins = <
-      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 135, PIN_INPUT_SLEW | MUX_MODE2 ) // B07 uart6 rxd    P18.50
-      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 136, PIN_INPUT_SLEW | MUX_MODE2 ) // B08 uart6 txd    P18.51
+      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 135, PIN_INPUT_SLEW | MUX_MODE3 ) // B07 uart6 rxd    P18.50
+      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 136, PIN_INPUT_SLEW | MUX_MODE3 ) // B08 uart6 txd    P18.51
     >;
   };   
   
   uart8_pins_default: uart8_pins_default {
     pinctrl-single,pins = <
-      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 205, PIN_INPUT_SLEW | MUX_MODE2 ) // C18 uart7 rxd    P17.43
-      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 206, PIN_INPUT_SLEW | MUX_MODE2 ) // A21 uart7 txd    P17.27
+      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 205, PIN_INPUT_SLEW | MUX_MODE3 ) // C18 uart7 rxd    P17.43
+      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 206, PIN_INPUT_SLEW | MUX_MODE3 ) // A21 uart7 txd    P17.27
     >;
   };   
 
