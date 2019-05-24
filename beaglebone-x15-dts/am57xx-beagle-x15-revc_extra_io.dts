@@ -1,6 +1,6 @@
 /*
  * Modify original am57xx-beagle-x15-revc.dts to allow use of
- * - I2C 4
+ * - I2C 4 and 5
  * - UARTs 1, 4, 5, 6, 7, 8, 9 and 10
  * - PWM (using timers 2, 3, 4 and 10)
  * and make them accessible via the bbx15 expansion headers
@@ -115,6 +115,14 @@
   //    DRA7XX_CORE_IOPAD( 0x3400 + 4 * 171, PIN_INPUT_SLEW | MUX_MODE10 ) // B14 i2c 3 sda [IO]  P17.53
   //  >;
   //}; 
+
+  // already set by default
+  //i2c5_pins_default: i2c5_pins_default {
+  //  pinctrl-single,pins = <
+  //    DRA7XX_CORE_IOPAD( 0x3400 + 4 * 174, PIN_INPUT_SLEW | MUX_MODE10 ) // F12 i2c 4 scl [IO]  P18.04
+  //    DRA7XX_CORE_IOPAD( 0x3400 + 4 * 173, PIN_INPUT_SLEW | MUX_MODE10 ) // G12 i2c 4 sda [IO]  P18.03
+  //  >;
+  //};   
 
 //-----------------------------------------------------------------------------------------------------------
 // pin mux for uarts
@@ -238,6 +246,10 @@
 };
 
 &i2c4 {
+  status = "okay";
+};
+
+&i2c5 {
   status = "okay";
 };
 
