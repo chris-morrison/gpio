@@ -2,41 +2,10 @@
  * Modify original am57xx-beagle-x15-revc.dts to allow use of
  * - I2C 4
  * - UARTs 1, 4, 5, 6, 7, 8, 9 and 10
- * - PWM (using timers 2, 3 and 4)
- * - timer 9 
+ * - PWM (using timers 2, 3, 4 and 9)
  * and make them accessible via the bbx15 expansion headers
  *
  * Notes:
- * Timers as inputs:
- * - add /etc/modprobe.d/uio.conf
- * - add /etc/udev/rules.d/10-of-symlink.rules
- * - reboot
- * - timers should then be accessible via /dev/uio/timerx
- * E.g.
- * int timer9fd = open("/dev/uio/timer9", O_RDWR);
- * if (timer9fd >= 0)
- * {
- *   // mmap, do stuff with timer2 registers...
- *   close(timer2fd);
- * }
- *
- * Lesson learned:
- * If the device is not opened, the kernel will not enable the 
- * timer clocks in the PCRM and the timer registers will not be
- * accessible (any attempt to read/write will generate an exception)
- * To see PCRM clock enable status (e.g. for timer9):
- * $ devmem2 0x4a009750
- * Value at address 0x4A009750 (0xb6f76750): 0x30000  // CM_L4PER_TIMER9_CLKCTRL.MODULEMODE == disabled
- * (now open /dev/uio/timer9, as per above)
- * $ devmem2 0x4a009750
- * Value at address 0x4A009750 (0xb6f7a750): 0x20002  // CM_L4PER_TIMER9_CLKCTRL.MODULEMODE == enabled
- * (now close /dev/uio/timer9)
- * $ devmem2 0x4a009750
- * Value at address 0x4A009750 (0xb6f76750): 0x30000  // CM_L4PER_TIMER9_CLKCTRL.MODULEMODE == disabled
- *
- * The alternative is to set the PCRM registers directly, but it's 
- * nicer to let the kernel manage device clocking/power
- *
  * UARTs:
  * The debian stretch kernel only has six UARTs enabled by default, 
  * whereas this DTS enables nine (the eight above, plus existing UART3)
@@ -141,11 +110,11 @@
 
   // already set by default
   //i2c4_pins_default: i2c4_pins_default {
-  //             pinctrl-single,pins = <
+  //  pinctrl-single,pins = <
   //    DRA7XX_CORE_IOPAD( 0x3400 + 4 * 172, PIN_INPUT_SLEW | MUX_MODE10 ) // J14 i2c 3 scl [IO]  P17.46
   //    DRA7XX_CORE_IOPAD( 0x3400 + 4 * 171, PIN_INPUT_SLEW | MUX_MODE10 ) // B14 i2c 3 sda [IO]  P17.53
-  //             >;
-  //      }; 
+  //  >;
+  //}; 
 
 //-----------------------------------------------------------------------------------------------------------
 // pin mux for uarts
@@ -190,8 +159,8 @@
   
   uart7_pins_default: uart7_pins_default {
     pinctrl-single,pins = <
-      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 135, PIN_INPUT_SLEW | MUX_MODE3 ) // B07 uart6 rxd    P18.50
-      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 136, PIN_INPUT_SLEW | MUX_MODE3 ) // B08 uart6 txd    P18.51
+      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 135, PIN_INPUT_SLEW | MUX_MODE2 ) // B07 uart6 rxd    P18.50
+      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 136, PIN_INPUT_SLEW | MUX_MODE2 ) // B08 uart6 txd    P18.51
     >;
   };   
   
@@ -216,92 +185,55 @@
     >;
   };
 //-----------------------------------------------------------------------------------------------------------
-// pin mux for GPIOs
 
-  //  GPIO on connector P19
-  GPIO_pins_P19_default: GPIO_pins_P19_default {
-    pinctrl-single,pins = <
-      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 77 , PIN_INPUT_SLEW | MUX_MODE14 ) // AF01 gpio 2.20 [IO]   P19.11
-      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 81 , PIN_INPUT_SLEW | MUX_MODE14 ) // AE02 gpio 2.24 [IO]   P19.12
-      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 68 , PIN_INPUT_SLEW | MUX_MODE14 ) // AH04 gpio 2.11 [IO]   P19.14
-      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 69 , PIN_INPUT_SLEW | MUX_MODE14 ) // AG04 gpio 2.12 [IO]   P19.15
-      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 80 , PIN_INPUT_SLEW | MUX_MODE14 ) // AE01 gpio 2.23 [IO]   P19.39
-      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 83 , PIN_INPUT_SLEW | MUX_MODE14 ) // AD02 gpio 2.26 [IO]   P19.40
-      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 73 , PIN_INPUT_SLEW | MUX_MODE14 ) // AF02 gpio 2.16 [IO]   P19.42
-      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 75 , PIN_INPUT_SLEW | MUX_MODE14 ) // AF03 gpio 2.18 [IO]   P19.43
-      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 65 , PIN_INPUT_SLEW | MUX_MODE14 ) // AH03 gpio 2.08 [IO]   P19.45
-      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 71 , PIN_INPUT_SLEW | MUX_MODE14 ) // AG03 gpio 2.14 [IO]   P19.46
-      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 66 , PIN_INPUT_SLEW | MUX_MODE14 ) // AH05 gpio 2.09 [IO]   P19.48
-      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 72 , PIN_INPUT_SLEW | MUX_MODE14 ) // AG05 gpio 2.15 [IO]   P19.49
-      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 64 , PIN_INPUT_SLEW | MUX_MODE14 ) // AH06 gpio 2.07 [IO]   P19.52
-      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 67 , PIN_INPUT_SLEW | MUX_MODE14 ) // AG06 gpio 2.10 [IO]   P19.53
-      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 56 , PIN_INPUT_SLEW | MUX_MODE14 ) // AH07 gpio 1.31 [IO]   P19.55
-      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 63 , PIN_INPUT_SLEW | MUX_MODE14 ) // AG07 gpio 2.06 [IO]   P19.56
-    >;
-  };
-
-  //  GPIO on connector P16
-  GPIO_pins_P16_default: GPIO_pins_P16_default {
-    pinctrl-single,pins = <
-      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 184 , PIN_INPUT_SLEW | MUX_MODE14 ) // A12 gpio 3.17 [IO]   P16.03
-      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 182 , PIN_INPUT_SLEW | MUX_MODE14 ) // A11 gpio 4.11 [IO]   P16.04
-      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 185 , PIN_INPUT_SLEW | MUX_MODE14 ) // E14 gpio 3.18 [IO]   P16.05
-      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 29  , PIN_INPUT_SLEW | MUX_MODE14 ) // R03 gpio 1.03 [IO]   P16.07
-      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 34  , PIN_INPUT_SLEW | MUX_MODE14 ) // R02 gpio 1.08 [IO]   P16.08
-      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 24  , PIN_INPUT_SLEW | MUX_MODE14 ) // N07 gpio 0.30 [IO]   P16.09
-      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 52  , PIN_INPUT_SLEW | MUX_MODE14 ) // N06 gpio 1.26 [IO]   P16.11
-      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 18  , PIN_INPUT_SLEW | MUX_MODE14 ) // T06 gpio 6.05 [IO]   P16.12
-      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 26  , PIN_INPUT_SLEW | MUX_MODE14 ) // N09 gpio 1.00 [IO]   P16.14
-      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 4   , PIN_INPUT_SLEW | MUX_MODE14 ) // L06 gpio 0.10 [IO]   P16.15
-      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 2   , PIN_INPUT_SLEW | MUX_MODE14 ) // L05 gpio 0.08 [IO]   P16.16
-      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 53  , PIN_INPUT_SLEW | MUX_MODE14 ) // M04 gpio 1.27 [IO]   P16.17
-      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 5   , PIN_INPUT_SLEW | MUX_MODE14 ) // L04 gpio 0.11 [IO]   P16.18
-      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 51  , PIN_INPUT_SLEW | MUX_MODE14 ) // M03 gpio 1.25 [IO]   P16.19
-      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 54  , PIN_INPUT_SLEW | MUX_MODE14 ) // N02 gpio 1.28 [IO]   P16.20
-      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 49  , PIN_INPUT_SLEW | MUX_MODE14 ) // N01 gpio 1.23 [IO]   P16.21
-      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 3   , PIN_INPUT_SLEW | MUX_MODE14 ) // M01 gpio 0.09 [IO]   P16.22
-      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 8   , PIN_INPUT_SLEW | MUX_MODE14 ) // L01 gpio 6.18 [IO]   P16.23
-      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 12  , PIN_INPUT_SLEW | MUX_MODE14 ) // H01 gpio 0.18 [IO]   P16.24
-      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 15  , PIN_INPUT_SLEW | MUX_MODE14 ) // H03 gpio 0.21 [IO]   P16.25
-      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 13  , PIN_INPUT_SLEW | MUX_MODE14 ) // J03 gpio 0.19 [IO]   P16.26
-      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 14  , PIN_INPUT_SLEW | MUX_MODE14 ) // H02 gpio 0.20 [IO]   P16.27
-      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 183 , PIN_INPUT_SLEW | MUX_MODE14 ) // B13 gpio 4.12 [IO]   P16.33
-    >;
-  };        
-        
 };  // end pin-muxing
-
 
 /* enable extra io */
 &uart1 {
+  pinctrl-names = "default";
+  pinctrl-0 = <&uart1_pins_default>;  
 	status = "okay";
 };
 
 &uart4 {
+  pinctrl-names = "default";
+  pinctrl-0 = <&uart4_pins_default>;    
 	status = "okay";
 };
 
 &uart5 {
+  pinctrl-names = "default";
+  pinctrl-0 = <&uart5_pins_default>;  
 	status = "okay";
 };
 
 &uart6 {
+  pinctrl-names = "default";
+  pinctrl-0 = <&uart6_pins_default>;    
 	status = "okay";
 };
 
 &uart7 {
+  pinctrl-names = "default";
+  pinctrl-0 = <&uart7_pins_default>;    
 	status = "okay";
 };
 
 &uart8 {
+  pinctrl-names = "default";
+  pinctrl-0 = <&uart8_pins_default>;    
 	status = "okay";
 };
 
 &uart9 {
+  pinctrl-names = "default";
+  pinctrl-0 = <&uart9_pins_default>;  
 	status = "okay";
 };
 
 &uart10 {
+  pinctrl-names = "default";
+  pinctrl-0 = <&uart10_pins_default>;  
 	status = "okay";
 };
 
@@ -322,12 +254,8 @@
 };
 
 &timer9 {
-  compatible = "uio";
-  pinctrl-names = "default";
-  symlink = "uio/timer9";
-  pinctrl-0 = <&timer9_pins_default>;
+  ti,timer-pwm;
 };
-
 
 / {
   pwm2: dmtimer-pwm@2 {
@@ -344,7 +272,6 @@
     #pwm-cells = <3>;
   };
 
-  
   pwm4: dmtimer-pwm@4 {
     compatible = "ti,omap-dmtimer-pwm";
     ti,timers = <&timer4>;
@@ -353,4 +280,13 @@
     pinctrl-names = "default";
     pinctrl-0 = <&timer4_pins_default>;
   };  
+
+  pwm9: dmtimer-pwm@9 {
+    compatible = "ti,omap-dmtimer-pwm";
+    ti,timers = <&timer9>;
+    ti,clock-source = <0>;
+    #pwm-cells = <3>;
+    pinctrl-names = "default";
+    pinctrl-0 = <&timer9_pins_default>;
+  };    
 };
