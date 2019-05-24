@@ -2,7 +2,7 @@
  * Modify original am57xx-beagle-x15-revc.dts to allow use of
  * - I2C 4
  * - UARTs 1, 4, 5, 6, 7, 8, 9 and 10
- * - PWM (using timers 2, 3, 4 and 9)
+ * - PWM (using timers 2, 3, 4 and 10)
  * and make them accessible via the bbx15 expansion headers
  *
  * Notes:
@@ -99,9 +99,9 @@
     >;
   }; 
 
-  timer9_pins_default: timer9_pins_default {
+  timer10_pins_default: timer10_pins_default {
     pinctrl-single,pins = <
-      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 186, PIN_INPUT_SLEW | MUX_MODE10 ) // A13 timer8      P17.49
+      DRA7XX_CORE_IOPAD( 0x3400 + 4 * 186, PIN_INPUT_SLEW | MUX_MODE10 ) // A13 timer9      P17.49
     >;
   };   
 
@@ -253,7 +253,7 @@
   ti,timer-pwm;
 };
 
-&timer9 {
+&timer10 {
   ti,timer-pwm;
 };
 
@@ -281,12 +281,12 @@
     pinctrl-0 = <&timer4_pins_default>;
   };  
 
-  pwm9: dmtimer-pwm@9 {
+  pwm10: dmtimer-pwm@9 {
     compatible = "ti,omap-dmtimer-pwm";
-    ti,timers = <&timer9>;
+    ti,timers = <&timer10>;
     ti,clock-source = <0>;
     #pwm-cells = <3>;
     pinctrl-names = "default";
-    pinctrl-0 = <&timer9_pins_default>;
+    pinctrl-0 = <&timer10_pins_default>;
   };    
 };
