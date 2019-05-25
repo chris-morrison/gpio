@@ -8,7 +8,7 @@
 - [Committing changes to the SD card](#Committing-changes-to-the-SD-card)
 - [bbx15 as a development platform](#bbx15-as-a-development-platform)
 
-##Initial setup
+## Initial setup
 The Beagleboard-X15 (bbx15) ships with an image loaded onto its internal flash memory - it will boot as a linux machine out of the box.  This guide sets up a different image on a micro SD card.
 ### Items needed
 #### Hardware
