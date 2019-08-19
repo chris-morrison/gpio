@@ -8,6 +8,7 @@
 #include <linux/cdev.h>
 #include <linux/interrupt.h>
 #include <linux/gpio.h>
+#include <linux/timekeeping.h>
  
 MODULE_LICENSE("GPL");              
 MODULE_AUTHOR("Chris Morrison");      
@@ -19,7 +20,7 @@ typedef struct
    int gpioNum;
    int irqNum;
    char gpioName[8];
-   struct timespec tsLast;
+   struct timespec tsPrev;
    struct timespec tsCurrent;
    struct timespec tsDiff;
    int intCount;
@@ -133,10 +134,9 @@ static ssize_t lastTime_show(struct device * dev, struct device_attribute *attr,
    gpioDevPriv * gpiodev = dev_get_drvdata(dev);
    if (0 != gpiodev)
    {
-      
-      ret = sprintf(buf, "%.2lu:%.2lu:%.2lu:%.9lu\n", (gpiodev->tsLast.tv_sec/3600)%24,
-        (gpiodev->tsLast.tv_sec/60)%60, gpiodev->tsLast.tv_sec % 60, 
-        gpiodev->tsLast.tv_nsec);
+      unsigned long long ns = (gpiodev->tsCurrent.tv_sec * 1000000000ULL) + 
+        gpiodev->tsCurrent.tv_nsec;
+      ret = sprintf(buf, "%llu\n", ns);
    }
    return ret;
 }
@@ -271,9 +271,9 @@ static irq_handler_t gpioIRQ_Handler(unsigned int irq, void * dev_id, struct pt_
    {
       ret = (irq_handler_t)IRQ_HANDLED;
 
-      gpiodev->tsLast = gpiodev->tsCurrent;
-      getnstimeofday(&gpiodev->tsCurrent);
-      gpiodev->tsDiff = timespec_sub(gpiodev->tsCurrent, gpiodev->tsLast);
+      gpiodev->tsPrev = gpiodev->tsCurrent;
+      ktime_get_real_ts(&gpiodev->tsCurrent);
+      gpiodev->tsDiff = timespec_sub(gpiodev->tsCurrent, gpiodev->tsPrev);
       gpiodev->intCount++;
 
    }
